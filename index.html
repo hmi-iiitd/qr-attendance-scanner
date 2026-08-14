@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Attendance Scanner</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- QR Scanner -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client"></script>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>📷 Attendance Scanner</h1>
+  <div class="subtitle">
+    Scan student QR codes to record attendance
+  </div>
+
+
+  <!-- GOOGLE AUTH -->
+  <div class="card">
+
+    <h2>1. Google Authentication</h2>
+
+    <button
+      id="authorizeBtn"
+      class="primary"
+      onclick="authorizeGoogle()">
+      Sign in with Google
+    </button>
+
+    <div id="authStatus" class="status"></div>
+
+  </div>
+
+
+  <!-- SESSION -->
+  <div class="card">
+
+    <h2>2. Lecture / Session</h2>
+
+    <label for="sessionInput">
+      Lecture / Session
+    </label>
+
+    <input
+      id="sessionInput"
+      type="text"
+      placeholder="e.g. Lecture 0"
+      oninput="updateSessionStats()"
+    />
+
+    <div class="small-note">
+      Attendance is unique for each date + lecture/session + student.
+    </div>
+
+    <div class="button-row">
+
+      <button
+        id="loadBtn"
+        class="primary"
+        onclick="loadData()"
+        disabled>
+        Load Student Data
+      </button>
+
+      <button
+        class="secondary"
+        onclick="reloadAttendance()"
+        disabled
+        id="refreshBtn">
+        Refresh Attendance
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- STATS -->
+  <div class="card">
+
+    <h2>3. Attendance Statistics</h2>
+
+    <div class="stats">
+
+      <div class="stat">
+        <div
+          class="stat-number"
+          id="studentCount">
+          0
+        </div>
+
+        <div class="stat-label">
+          Students
+        </div>
+      </div>
+
+
+      <div class="stat">
+
+        <div
+          class="stat-number"
+          id="presentCount">
+          0
+        </div>
+
+        <div class="stat-label">
+          Present This Session
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SCANNER -->
+  <div class="card">
+
+    <h2>4. Scan Student QR</h2>
+
+    <div class="button-row">
+
+      <button
+        id="startBtn"
+        class="success"
+        onclick="startScanner()"
+        disabled>
+        Start Camera
+      </button>
+
+      <button
+        id="stopBtn"
+        class="danger"
+        onclick="stopScanner()"
+        disabled>
+        Stop Camera
+      </button>
+
+    </div>
+
+    <div id="reader"></div>
+
+    <div
+      id="scanResult"
+      class="result">
+    </div>
+
+  </div>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
