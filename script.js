@@ -225,18 +225,65 @@ function getSession() {
 }
 
 /* =========================================================
+     DATE NORMALIZATION
+     ========================================================= */
+
+function normalizeDate(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+
+  const str = String(value).trim();
+
+  // Already in YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return str;
+  }
+
+  // Handle DD/MM/YYYY
+  const slashMatch = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (slashMatch) {
+    const day = slashMatch[1];
+    const month = slashMatch[2];
+    const year = slashMatch[3];
+
+    return `${year}-${month}-${day}`;
+  }
+
+  // Handle Google Sheets / Excel serial dates
+  const serial = Number(str);
+
+  if (!isNaN(serial) && serial > 0) {
+    const date = new Date(
+      Date.UTC(1899, 11, 30) + serial * 86400000
+    );
+
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return str;
+}
+
+
+/* =========================================================
      ATTENDANCE KEY
      ========================================================= */
 
 function makeAttendanceKey(date, roll, session) {
   return (
-    String(date).trim() +
+    normalizeDate(date) +
     "||" +
     String(roll).trim().toUpperCase() +
     "||" +
     normalizeSession(session)
   );
 }
+
 
 /* =========================================================
      LOAD STUDENTS
@@ -313,7 +360,7 @@ async function loadAttendanceData() {
       continue;
     }
 
-    const date = String(row[1] || "").trim();
+    const date = normalizeDate(row[1]);
 
     const roll = String(row[2] || "")
       .trim()
