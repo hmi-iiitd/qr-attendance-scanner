@@ -2,8 +2,7 @@
      CONFIGURATION
      ========================================================= */
 
-const CLIENT_ID =
-  "443003161655-bdos7qmqbioqhnosud9ihgt7d1t9lpqv.apps.googleusercontent.com";
+const CLIENT_ID = "YOUR_CLIENT_ID";
 
 const SPREADSHEET_ID = "YOUR_SPREADSHEET_ID";
 
