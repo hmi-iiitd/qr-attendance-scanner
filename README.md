@@ -174,6 +174,9 @@ Authorized JavaScript origin must be `https://USERNAME.github.io` with **no** `/
 **Login expired mid-lecture?**  
 Use **Reconnect Google**, then Load Student Data again if needed.
 
+**Can I enable two-factor authentication (2FA)?**  
+Yes. Turn on 2FA on the Google Workspace accounts that sign in. Google may ask for the second factor only at **Sign in with Google** (and sometimes on Reconnect). After that, loading the roster, scanning QRs, and writing to the sheet work the same. Students do not use 2FA; they only show their QR.
+
 **Can I run the QR script again?**  
 Yes, if you keep `tokens.csv`. Existing roll numbers reuse the same QR. Only new rolls get new codes.
 
