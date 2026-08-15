@@ -1,12 +1,14 @@
-# QR Attendance Scanner (IIIT Delhi)
+# QR Attendance Scanner
 
-QR attendance for one course: a Google Sheet in IIITD Drive, unique student QRs, and a GitHub Pages scanner. Anyone who will scan must sign in with `@iiitd.ac.in` and must have **Editor** access on that sheet. Students only receive their QR; they do not get the spreadsheet.
+QR attendance for one course: a Google Sheet, unique student QRs, and a GitHub Pages scanner. Anyone who will scan must sign in with Google and must have **Editor** access on that sheet. Students only receive their QR; they do not get the spreadsheet.
+
+This copy is documented for **IIIT Delhi** (`@iiitd.ac.in`, Asia/Kolkata). Other universities and labs may fork it and change the domain, Drive, and timezone for their own non-commercial teaching or research.
 
 Assume you already have the enrolled list (roll number and name).
 
 **How long:** first course, about **45–90 minutes** if GitHub and Python are already available (Cloud Console + Pages are most of it). Later courses: about **20–40 minutes**, plus however long it takes to send QRs to students. Distributing QRs for a large class is separate from the technical setup.
 
-You need: an `@iiitd.ac.in` account, a GitHub account, and Python 3 on a laptop (`pip install -r requirements.txt`).
+You need: a Google account on your institution’s Workspace (at IIITD: `@iiitd.ac.in`), a GitHub account, and Python 3 on a laptop (`pip install -r requirements.txt`).
 
 ---
 
@@ -151,6 +153,17 @@ Each successful scan appends timestamp, date (IST), roll number, name, Present, 
 - Student lists and tokens belong in the course Drive file, not on public GitHub.
 - A photo of a QR still counts as that student.
 - Deleting `tokens.csv` and regenerating invalidates QRs already issued.
+
+## Other institutions
+
+Fork this repository and use it for non-commercial teaching or research. You will typically change:
+
+- `HOSTED_DOMAIN` in `config.js` (your Google Workspace domain, or leave empty if you do not restrict it)
+- OAuth consent screen (Internal on *your* Workspace, or the option your admin allows)
+- Spreadsheet in your own Google Drive; share Editors only with people who take attendance
+- Date/time in `script.js` if you are not on `Asia/Kolkata`
+
+Commercial use is not allowed; see [LICENSE](LICENSE).
 
 ## Credits
 
