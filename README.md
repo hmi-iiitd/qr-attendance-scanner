@@ -1,193 +1,157 @@
-# QR Attendance Scanner
+# QR Attendance Scanner (IIIT Delhi)
 
-QR-based attendance system for IIIT Delhi courses.
+QR attendance for one course: a Google Sheet in IIITD Drive, unique student QRs, and a GitHub Pages scanner. Anyone who will scan must sign in with `@iiitd.ac.in` and must have **Editor** access on that sheet. Students only receive their QR; they do not get the spreadsheet.
 
-## Setup for a New Course
+Assume you already have the enrolled list (roll number and name).
 
-### 1. Prepare Student List
+**How long:** first course, about **45–90 minutes** if GitHub and Python are already available (Cloud Console + Pages are most of it). Later courses: about **20–40 minutes**, plus however long it takes to send QRs to students. Distributing QRs for a large class is separate from the technical setup.
 
-Create a CSV file named `students.csv`:
+You need: an `@iiitd.ac.in` account, a GitHub account, and Python 3 on a laptop (`pip install -r requirements.txt`).
 
-```text
-roll_no,name
-CS21-014,Aarav Sharma
-CS21-015,Diya Menon
-```
+---
 
-### 2. Generate QR Codes
+## 1. Create the spreadsheet
 
-Install the required packages:
+In IIITD Drive, create a spreadsheet with two tabs.
 
-```bash
-pip install -r requirements.txt
-```
-
-Run:
-
-```bash
-python generate_qr.py students.csv
-```
-
-This generates:
-
-- `qr_codes/` → QR code image for each student
-- `tokens.csv` → student details and QR tokens
-- `print_sheet.html` → printable QR cards
-
-### 3. Create Google Spreadsheet
-
-Create a Google Spreadsheet with two sheets:
-
-#### Students
+**Students**
 
 ```text
 roll_no | name | token
 ```
 
-Copy the contents of `tokens.csv` into this sheet.
-
-#### Attendance
+**Attendance**
 
 ```text
 timestamp | date | roll_no | name | status | session
 ```
 
-### 4. Get the Spreadsheet ID
+**Share** the spreadsheet with every `@iiitd.ac.in` account that will take attendance, as **Editor**. Do not share it with students. Do not use “anyone with the link.”
 
-Open the Google Spreadsheet and look at its URL.
-
-For example:
+Copy the spreadsheet ID from the URL into `config.js` later:
 
 ```text
-https://docs.google.com/spreadsheets/d/1AbCDeFGhijkLMNopQRsTUVwxyz123456789/edit
+https://docs.google.com/spreadsheets/d/THIS_PART/edit
 ```
 
-The Spreadsheet ID is the part between `/d/` and `/edit`:
+---
+
+## 2. Generate student QRs (once)
+
+From the enrolled list, make `students.csv` with exactly these headers:
+
+```csv
+roll_no,name
+PhD24103,Partha Chowdhury
+MT24028,Chaitanya Ravindra Kulkarni
+```
+
+Drop extra ERP columns (serial number, type, batch, term, grade). `roll_no` is the unique key.
+
+```bash
+pip install -r requirements.txt
+python generate_qr.py students.csv
+```
+
+This writes:
+
+- `qr_codes/<ROLL>.png` — one QR per student
+- `tokens.csv` — `roll_no,name,token`
+- `print_sheet.html` — printable cards
+
+Paste **all** of `tokens.csv` into the **Students** tab (keep the header).
+
+Give each student **only their own** QR (`qr_codes/<ROLL>.png`, or print `print_sheet.html`). They reuse it for the term. Do not post the whole `qr_codes/` folder on a public link.
+
+If students join later, keep `tokens.csv`, add rows to `students.csv`, and run the script again. Existing roll numbers reuse their tokens; only new rolls get new QRs. Append the new rows to the Students tab and send QRs only to the new students.
+
+Do not commit `students.csv`, `tokens.csv`, `qr_codes/`, or `print_sheet.html` (they are gitignored).
+
+---
+
+## 3. Host the scanner on GitHub Pages
+
+Create a GitHub repository from this project (fork, or clone and push). Keep `index.html`, `script.js`, `style.css`, and `config.js` at the **repository root**.
+
+Repo → **Settings** → **Pages** → **Deploy from a branch** → `main` / `/ (root)` → Save.
+
+Scanner URL:
 
 ```text
-1AbCDeFGhijkLMNopQRsTUVwxyz123456789
+https://<github-username>.github.io/<repo-name>/
 ```
 
-### 5. Create a Google OAuth Client ID
-
-The scanner uses Google OAuth to allow TAs to sign in and access the Google Sheet.
-
-#### Step 1: Open Google Cloud Console
-
-Go to:
-
-https://console.cloud.google.com/
-
-Create a new Google Cloud project or select an existing project.
-
-#### Step 2: Enable Google Sheets API
-
-Go to **APIs & Services → Library**, search for **Google Sheets API**, and click **Enable**.
-
-#### Step 3: Configure OAuth Consent Screen
-
-Go to **APIs & Services → OAuth consent screen** and configure the application for the appropriate Google Workspace organization.
-
-For IIIT Delhi courses, use the **Internal** option if it is available for the IIIT Delhi Google Workspace.
-
-#### Step 4: Create OAuth Client ID
-
-Go to **APIs & Services → Credentials** → **Create Credentials** → **OAuth client ID**.
-
-Select **Web application**.
-
-Add the GitHub Pages URL of the scanner under **Authorized JavaScript origins**. For example:
+OAuth origin (used in the next step — **no** `/repo-name`):
 
 ```text
-https://YOUR_USERNAME.github.io
+https://<github-username>.github.io
 ```
 
-Google will provide a Client ID similar to:
+---
 
-```text
-123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com
-```
+## 4. Google Cloud OAuth (not the same as Drive)
 
-Copy this Client ID.
+Drive holds the sheet. [Google Cloud Console](https://console.cloud.google.com/) registers the scanner page so **Sign in with Google** works. Use an `@iiitd.ac.in` account. First time: about 10–15 minutes.
 
-> Do not share or commit a Google OAuth Client Secret. The Client ID is used by the frontend and is not a secret.
+1. Open Cloud Console → **New project** → name it like `cse123-attendance` → Create.
+2. **APIs & Services** → **Library** → **Google Sheets API** → **Enable**.
+3. **APIs & Services** → **OAuth consent screen**:
+   - **Internal** (IIIT Delhi Workspace). If Internal is missing, stop and ask a Workspace admin. Do not use External.
+   - App name: course code or `QR Attendance Scanner`.
+   - Support and developer contact: your IIITD email.
+   - Save.
+4. **Credentials** → **Create credentials** → **OAuth client ID**:
+   - Type: **Web application**.
+   - **Authorized JavaScript origins** → Add:
+     - `https://<github-username>.github.io`
+     - optional: `http://localhost:8000` for local testing
+   - Leave redirect URIs empty → Create.
+5. Copy the **Client ID** only (`….apps.googleusercontent.com`). Do not create or commit a Client Secret.
 
-### 6. Configure the Scanner
+If sign-in fails, the usual mistake is pasting the full Pages URL (with `/repo-name/`) as the origin. Origin has no path.
 
-Open `script.js`.
+---
 
-Find:
+## 5. Edit `config.js` and push
 
 ```js
-const CLIENT_ID = "YOUR_CLIENT_ID";
-const SPREADSHEET_ID = "YOUR_SPREADSHEET_ID";
+COURSE_NAME: "CSE123 – Course Name",
+CLIENT_ID: "paste-the-client-id-here",
+SPREADSHEET_ID: "paste-the-id-from-the-sheet-url",
+HOSTED_DOMAIN: "iiitd.ac.in",
 ```
 
-Replace `YOUR_CLIENT_ID` with the Client ID obtained from Google Cloud Console and `YOUR_SPREADSHEET_ID` with the ID of the course spreadsheet.
+Commit and push `config.js`. Hard-refresh the Pages URL if an old config is cached.
 
-For example:
+---
 
-```js
-const CLIENT_ID =
-  "123456789012-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com";
+## 6. Smoke test
 
-const SPREADSHEET_ID =
-  "1AbCDeFGhijkLMNopQRsTUVwxyz123456789";
-```
+1. Open the Pages URL on the phone that will scan.
+2. **Sign in with Google** (`@iiitd.ac.in`).
+3. Enter a session name, e.g. `Lecture 0`.
+4. **Load Student Data** → **Start Camera** → scan one student QR.
+5. Confirm a **Present** row in the Attendance tab.
 
-### 7. Give TA Access
+---
 
-Give **Editor access** to the TAs who will be taking attendance.
+## In class
 
-TAs should use their **@iiitd.ac.in** Google accounts.
+1. Open the course Pages URL.
+2. Sign in with `@iiitd.ac.in`.
+3. Use the same session spelling every week (`Lecture 3`, not `Lec 3` one week and `Lecture 3` the next).
+4. Load Student Data → Start Camera → scan.
 
-The OAuth Client ID does not automatically give a TA access to the spreadsheet. Each TA must also have permission to access the course spreadsheet.
+Each successful scan appends timestamp, date (IST), roll number, name, Present, and session. Filter the Attendance tab by **date** or **session**. The same student is not marked twice for the same date + session. If login expires, use **Reconnect Google**.
 
+---
 
-### 8. Host `index.html` on GitHub Pages
+## Notes
 
-**a. Push the project to GitHub**
- 
-Create a new repository on GitHub, then form the project folder.
-Make sure `index.html`, `script.js`, and `style.css` are in the **root** of the
-repository, not inside a subfolder.
- 
-**b. Enable GitHub Pages**
- 
-1. Go to the repository → **Settings** → **Pages**.
-2. Under **Source**, choose **Deploy from a branch**.
-3. Select branch **main** and folder **/ (root)**.
-4. Click **Save**.
-After a minute or two the site will be live at:
- 
-```text
-https://<username>.github.io/<repo-name>/
-```
- 
-**c. Test it**
- 
-Open the Pages URL on the phone or laptop that will be used for scanning and
-check that the camera prompt appears and Google sign-in completes.
- 
-> Any later change to `script.js` (for example a new `SPREADSHEET_ID` for a new
-> course) must be committed and pushed — GitHub Pages redeploys automatically
-> within a minute. Hard-refresh the page if you still see the old version.
+- Student lists and tokens belong in the course Drive file, not on public GitHub.
+- A photo of a QR still counts as that student.
+- Deleting `tokens.csv` and regenerating invalidates QRs already issued.
 
- 
-## Using the Scanner
+## License
 
-1. Open the attendance scanner.
-2. Sign in using the IIITD Google account.
-3. Click **Load Student Data**.
-4. Enter the lecture/session number.
-5. Start scanning student QR codes.
-6. Attendance will automatically be added to the `Attendance` sheet.
-
-## Important
-
-- Each student gets a unique QR token.
-- Only present students are added to the `Attendance` sheet.
-- Duplicate attendance is prevented for the same **date + student + session**.
-- TAs must have **Editor access** to the course spreadsheet.
-- Use an **@iiitd.ac.in** Google account.
-- Never commit OAuth Client Secrets or other private credentials to GitHub.
+Non-commercial use only (teaching, research, internal institutional use). No warranty and no liability. See [LICENSE](LICENSE).

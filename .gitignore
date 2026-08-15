@@ -1,0 +1,11 @@
+# Student PII and QR secrets — never push these to GitHub
+students.csv
+tokens.csv
+qr_codes/
+print_sheet.html
+
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+venv/

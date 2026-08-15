@@ -7,6 +7,7 @@
   <title>Attendance Scanner</title>
 
   <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
 
   <!-- QR Scanner -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -19,8 +20,8 @@
 
 <div class="container">
 
-  <h1>📷 Attendance Scanner</h1>
-  <div class="subtitle">
+  <h1 id="pageTitle">Attendance Scanner</h1>
+  <div class="subtitle" id="pageSubtitle">
     Scan student QR codes to record attendance
   </div>
 
@@ -36,6 +37,12 @@
       onclick="authorizeGoogle()">
       Sign in with Google
     </button>
+
+    <div class="small-note">
+      Sign in with your <strong>@iiitd.ac.in</strong> account.
+      The course spreadsheet must be shared with you as
+      <strong>Editor</strong>. Do not share the sheet with students.
+    </div>
 
     <div id="authStatus" class="status"></div>
 

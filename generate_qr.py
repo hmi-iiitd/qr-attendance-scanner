@@ -14,6 +14,10 @@ Usage:
     pip install -r requirements.txt
     python generate_qr.py students.csv
 
+If tokens.csv already exists, tokens for existing roll numbers are
+reused so printed or phone QRs stay valid. Only new rolls get new
+tokens. Do not commit students.csv or tokens.csv to GitHub.
+
 Input students.csv format (header row required):
 
     roll_no,name
@@ -54,12 +58,31 @@ def make_token(roll_no: str) -> str:
     return f"{PREFIX}|{roll_no}|{random_part}"
 
 
-def read_students(path):
+def load_existing_tokens(path="tokens.csv"):
+    existing = {}
+
+    if not os.path.isfile(path):
+        return existing
+
+    with open(path, newline="", encoding="utf-8-sig") as f:
+        for row in csv.DictReader(f):
+            roll = (row.get("roll_no") or "").strip().upper()
+            token = (row.get("token") or "").strip()
+
+            if roll and token:
+                existing[roll] = token
+
+    return existing
+
+
+def read_students(path, existing_tokens):
     with open(path, newline="", encoding="utf-8-sig") as f:
         rows = list(csv.DictReader(f))
 
     students = []
     seen = set()
+    reused = 0
+    created = 0
 
     for row in rows:
         roll = (row.get("roll_no") or "").strip().upper()
@@ -74,15 +97,22 @@ def read_students(path):
 
         seen.add(roll)
 
+        if roll in existing_tokens:
+            token = existing_tokens[roll]
+            reused += 1
+        else:
+            token = make_token(roll)
+            created += 1
+
         students.append(
             {
                 "roll_no": roll,
                 "name": name,
-                "token": make_token(roll),
+                "token": token,
             }
         )
 
-    return students
+    return students, reused, created
 
 
 def write_qr_images(students):
@@ -260,7 +290,11 @@ def main():
             "Usage: python generate_qr.py students.csv"
         )
 
-    students = read_students(sys.argv[1])
+    existing_tokens = load_existing_tokens()
+    students, reused, created = read_students(
+        sys.argv[1],
+        existing_tokens,
+    )
 
     if not students:
         sys.exit(
@@ -273,6 +307,8 @@ def main():
     write_print_sheet(students)
 
     print(f"{len(students)} students processed.")
+    print(f"  reused existing tokens: {reused}")
+    print(f"  new tokens created:     {created}")
     print()
     print(f"QR images   -> {OUT_DIR}/")
     print("Token list  -> tokens.csv")
@@ -281,6 +317,10 @@ def main():
     print(
         "Copy the contents of tokens.csv into "
         "the Students sheet of the course spreadsheet."
+    )
+    print(
+        "Do not commit students.csv, tokens.csv, "
+        "qr_codes/, or print_sheet.html to GitHub."
     )
 
 

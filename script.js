@@ -2,15 +2,35 @@
      CONFIGURATION
      ========================================================= */
 
-const CLIENT_ID = "YOUR_CLIENT_ID";
-
-const SPREADSHEET_ID = "YOUR_SPREADSHEET_ID";
-
 const STUDENTS_RANGE = "Students!A:C";
 
 const ATTENDANCE_RANGE = "Attendance!A:F";
 
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
+
+function getConfig() {
+  const cfg = window.ATTENDANCE_CONFIG || {};
+
+  return {
+    CLIENT_ID: String(cfg.CLIENT_ID || "").trim(),
+    SPREADSHEET_ID: String(cfg.SPREADSHEET_ID || "").trim(),
+    COURSE_NAME: String(cfg.COURSE_NAME || "").trim(),
+    HOSTED_DOMAIN: String(cfg.HOSTED_DOMAIN || "iiitd.ac.in").trim(),
+  };
+}
+
+function isPlaceholder(value, marker) {
+  return !value || value.toUpperCase().includes(marker);
+}
+
+function isConfigured() {
+  const cfg = getConfig();
+
+  return (
+    !isPlaceholder(cfg.CLIENT_ID, "YOUR_CLIENT") &&
+    !isPlaceholder(cfg.SPREADSHEET_ID, "YOUR_SPREADSHEET")
+  );
+}
 
 /* =========================================================
      GLOBAL VARIABLES
@@ -52,41 +72,91 @@ let processingScan = false;
      GOOGLE AUTHENTICATION
      ========================================================= */
 
+function setConnectedUi() {
+  const button = document.getElementById("authorizeBtn");
+
+  button.textContent = "Reconnect Google";
+  button.disabled = false;
+
+  document.getElementById("loadBtn").disabled = false;
+  document.getElementById("refreshBtn").disabled = false;
+}
+
+function resetAuthUi(message) {
+  accessToken = null;
+
+  const button = document.getElementById("authorizeBtn");
+
+  button.textContent = "Sign in with Google";
+  button.disabled = false;
+
+  document.getElementById("loadBtn").disabled = true;
+  document.getElementById("refreshBtn").disabled = true;
+
+  if (message) {
+    showAuthStatus(message, "error");
+  }
+}
+
 function initializeGoogleAuth() {
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID,
+  if (!isConfigured()) {
+    resetAuthUi(
+      "Edit config.js with this course CLIENT_ID and SPREADSHEET_ID, then reload.",
+    );
 
+    document.getElementById("authorizeBtn").disabled = true;
+
+    return;
+  }
+
+  const cfg = getConfig();
+
+  const clientConfig = {
+    client_id: cfg.CLIENT_ID,
     scope: SCOPES,
-
     callback: (response) => {
       if (response.error) {
-        showAuthStatus("Google authorization failed.", "error");
+        resetAuthUi("Google authorization failed. Try signing in again.");
 
         return;
       }
 
       accessToken = response.access_token;
 
+      setConnectedUi();
+
       showAuthStatus(
-        "Google account connected successfully.",
+        "Google account connected. Load student data next.",
         "success-status",
       );
-
-      document.getElementById("authorizeBtn").textContent =
-        "Google Account Connected";
-
-      document.getElementById("authorizeBtn").disabled = true;
-
-      document.getElementById("loadBtn").disabled = false;
-
-      document.getElementById("refreshBtn").disabled = false;
     },
-  });
+    error_callback: () => {
+      resetAuthUi("Google authorization was cancelled or failed.");
+    },
+  };
+
+  if (cfg.HOSTED_DOMAIN) {
+    clientConfig.hosted_domain = cfg.HOSTED_DOMAIN;
+  }
+
+  tokenClient = google.accounts.oauth2.initTokenClient(clientConfig);
 }
 
 function authorizeGoogle() {
+  if (!isConfigured()) {
+    resetAuthUi(
+      "Edit config.js with this course CLIENT_ID and SPREADSHEET_ID, then reload.",
+    );
+
+    return;
+  }
+
   if (!tokenClient) {
     initializeGoogleAuth();
+  }
+
+  if (!tokenClient) {
+    return;
   }
 
   tokenClient.requestAccessToken({
@@ -106,6 +176,28 @@ function showAuthStatus(message, type) {
      GOOGLE SHEETS API
      ========================================================= */
 
+function describeSheetsError(status, fallbackPrefix, responseText) {
+  if (status === 401) {
+    resetAuthUi();
+
+    return "Google authorization expired. Sign in again, then retry.";
+  }
+
+  if (status === 403) {
+    return (
+      "This Google account cannot access the course spreadsheet. " +
+      "Ask the instructor to Share it with your @iiitd.ac.in account as Editor. " +
+      "Do not share the sheet with students."
+    );
+  }
+
+  if (status === 404) {
+    return "Spreadsheet not found. Check SPREADSHEET_ID in config.js.";
+  }
+
+  return fallbackPrefix + (responseText || status);
+}
+
 async function sheetsGet(range) {
   if (!accessToken) {
     throw new Error("Google account is not authorized.");
@@ -113,7 +205,7 @@ async function sheetsGet(range) {
 
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
-    SPREADSHEET_ID +
+    getConfig().SPREADSHEET_ID +
     "/values/" +
     encodeURIComponent(range);
 
@@ -125,16 +217,10 @@ async function sheetsGet(range) {
     },
   });
 
-  if (response.status === 401) {
-    accessToken = null;
-
-    throw new Error("Google authorization expired. Please sign in again.");
-  }
-
   if (!response.ok) {
     const text = await response.text();
 
-    throw new Error("Google Sheets error: " + text);
+    throw new Error(describeSheetsError(response.status, "Google Sheets error: ", text));
   }
 
   return await response.json();
@@ -147,7 +233,7 @@ async function sheetsAppend(rows) {
 
   const url =
     "https://sheets.googleapis.com/v4/spreadsheets/" +
-    SPREADSHEET_ID +
+    getConfig().SPREADSHEET_ID +
     "/values/" +
     encodeURIComponent(ATTENDANCE_RANGE) +
     ":append" +
@@ -168,16 +254,12 @@ async function sheetsAppend(rows) {
     }),
   });
 
-  if (response.status === 401) {
-    accessToken = null;
-
-    throw new Error("Google authorization expired. Please sign in again.");
-  }
-
   if (!response.ok) {
     const text = await response.text();
 
-    throw new Error("Unable to write attendance: " + text);
+    throw new Error(
+      describeSheetsError(response.status, "Unable to write attendance: ", text),
+    );
   }
 
   return await response.json();
@@ -746,11 +828,29 @@ function escapeHtml(value) {
      INITIALIZATION
      ========================================================= */
 
+function applyCourseBranding() {
+  const courseName = getConfig().COURSE_NAME;
+
+  if (!courseName || courseName.toUpperCase().includes("CSEXXX")) {
+    return;
+  }
+
+  document.title = courseName + " – Attendance Scanner";
+
+  const title = document.getElementById("pageTitle");
+  const subtitle = document.getElementById("pageSubtitle");
+
+  if (title) {
+    title.textContent = courseName;
+  }
+
+  if (subtitle) {
+    subtitle.textContent = "Scan student QR codes to record attendance";
+  }
+}
+
 window.addEventListener("load", () => {
-  /*
-         Wait for Google Identity Services
-         to become available.
-      */
+  applyCourseBranding();
 
   if (typeof google !== "undefined" && google.accounts) {
     initializeGoogleAuth();
