@@ -154,6 +154,35 @@ Each successful scan appends timestamp, date (IST), roll number, name, Present, 
 - A photo of a QR still counts as that student.
 - Deleting `tokens.csv` and regenerating invalidates QRs already issued.
 
+## FAQ
+
+**Who is allowed to mark attendance?**  
+Anyone whose `@iiitd.ac.in` (or your Workspace) account is on the spreadsheet **Share** list as **Editor**. They are not added as rows in the sheet.
+
+**Should students get the spreadsheet?**  
+No. Students only get their own QR.
+
+**What is `students.csv`?**  
+Two columns only: `roll_no,name`. Copy roll number and name from the enrolled list; drop other ERP columns.
+
+**Google Drive vs Cloud Console?**  
+Drive holds the attendance file. Cloud Console is a one-time step so **Sign in with Google** works on your GitHub Pages URL. It is not where student data lives.
+
+**Sign-in fails after setup?**  
+Authorized JavaScript origin must be `https://USERNAME.github.io` with **no** `/repo-name`. Confirm `config.js` is pushed and hard-refresh the Pages site.
+
+**Login expired mid-lecture?**  
+Use **Reconnect Google**, then Load Student Data again if needed.
+
+**Can I run the QR script again?**  
+Yes, if you keep `tokens.csv`. Existing roll numbers reuse the same QR. Only new rolls get new codes.
+
+**How do I see who was present on a given day?**  
+In the Attendance tab, filter the **date** column (IST). You can also filter **session**.
+
+**Can another university use this?**  
+Yes, for non-commercial teaching or research. Fork, then change domain / Drive / timezone as in *Other institutions* below. Commercial use is not allowed.
+
 ## Other institutions
 
 Fork this repository and use it for non-commercial teaching or research. You will typically change:
