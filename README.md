@@ -183,6 +183,12 @@ Yes, if you keep `tokens.csv`. Existing roll numbers reuse the same QR. Only new
 **How do I see who was present on a given day?**  
 In the Attendance tab, filter the **date** column (IST). You can also filter **session**.
 
+**How many students can one course support?**  
+A normal course is fine: tens to a few hundred on the roster (this flow was used live with about 150). A few thousand names would still load. The practical limit is the door queue, not the spreadsheet. A very large **Attendance** tab after a long semester may load a bit more slowly because the scanner reads that whole tab once per **Load** / **Refresh**. For a huge class, two phones can scan at once if both accounts are Editors.
+
+**How long does one scan take?**  
+Once the QR is in the camera box, marking is typically **about 1 second**, usually **under 2 seconds** on campus Wi-Fi. That is a Google Sheets write, not an instant local tick. The scanner then waits about **1.2 seconds** before accepting another code so the same QR is not written twice. Lining up the phone is usually slower than the software.
+
 **Can another university use this?**  
 Yes, for non-commercial teaching or research. Fork, then change domain / Drive / timezone as in *Other institutions* below. Commercial use is not allowed.
 
