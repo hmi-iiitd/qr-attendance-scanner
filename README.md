@@ -152,6 +152,19 @@ Each successful scan appends timestamp, date (IST), roll number, name, Present, 
 - A photo of a QR still counts as that student.
 - Deleting `tokens.csv` and regenerating invalidates QRs already issued.
 
+## Credits
+
+Based on [PranavAggarwal422/qr-attendance-scanner](https://github.com/PranavAggarwal422/qr-attendance-scanner) (QR generation, GitHub Pages scanner, Google Sheets + OAuth).
+
+This repository adds:
+
+- Per-course `config.js` (no IDs hard-coded in `script.js`)
+- Setup guide for a new course from an enrolled list
+- Sign-in limited to `@iiitd.ac.in`, reconnect when Google login expires
+- QR generation that reuses existing tokens so old cards stay valid
+- `.gitignore` so student lists and QR tokens are not pushed to GitHub
+- Non-commercial license with no warranty
+
 ## License
 
 Non-commercial use only (teaching, research, internal institutional use). No warranty and no liability. See [LICENSE](LICENSE).
